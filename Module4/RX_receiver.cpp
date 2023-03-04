@@ -1,48 +1,34 @@
 #include <SPI.h>
-#include <nRF24L01.h>
+#include <nRF24L01.h>   //Library needed in order to recognize our device
 #include <RF24.h>
 
-#define buttonPin1 3
-#define buttonPin2 4
+#define led1 A0 //LED
 
-int buttonState1 = 0;
-int buttonState2 = 0;
-RF24 radio(9, 8); // CE, CSN
 
-const byte address[6] = "00002";
+int buttonState = 0;//start off
+
+RF24 radio(9, 8); // Chip eneable(CE), Chip set(CSN)
+const byte address[6] = "00002"; // same as our TX
 
 void setup() {
-   pinMode(buttonPin1, INPUT_PULLUP);
-   pinMode(buttonPin2, INPUT_PULLUP);
    Serial.begin(9600);
+   pinMode(led1, OUTPUT); // set output LED
+   digitalWrite(led1, HIGH);
    radio.begin();
-   radio.openWritingPipe(address);
-   radio.setPALevel(RF24_PA_MIN);
-   radio.stopListening();
+   radio.openReadingPipe(0, address); // initialize radio transmitter
+   radio.setPALevel(RF24_PA_MIN); // min power
 }
+//receive signals from TX
 void loop() {
-   buttonState1 = digitalRead(buttonPin1);
-   buttonState2 = digitalRead(buttonPin2);
-
-   if (buttonState1 == 1)
-   {
-      buttonState1 = 1;
+   radio.startListening();
+   while (!radio.available());
+   radio.read(&buttonState, sizeof(buttonState));
+   Serial.println(buttonState);
+   //LED State
+   if (buttonState == 1) {
+      digitalWrite(led1, LOW);
    }
-   else  if (buttonState1 == 0)
-   {
-      buttonState1 = 0;
+   else  if (buttonState == 0) {
+      digitalWrite(led1, HIGH);
    }
-   if (buttonState2 == 1)
-   {
-      buttonState2 = 3;
-   }
-   else  if (buttonState2 == 0)
-   {
-      buttonState2 = 2;
-   }
-   Serial.print(buttonState1);
-   Serial.print("\t");
-   Serial.println(buttonState2);
-   radio.write(&buttonState1, sizeof(buttonState1));
-   radio.write(&buttonState2, sizeof(buttonState2));
 }
